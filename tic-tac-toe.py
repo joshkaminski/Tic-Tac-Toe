@@ -29,8 +29,8 @@ class TicTacToe:
                 [None, None, None]]
 
     # variables that hold the shape that the user and computer have
-    user_shape = "o"
-    computerShape = "x"
+    user_shape = "x"
+    computer_shape = "o"
 
     # variables that hold the frame that will display gameplay options, gameplay state, and current score
     game_state_frame = None
@@ -39,7 +39,7 @@ class TicTacToe:
     radio_button_frame = None
     radio_button_label = None
     button_options = ["X", "O"]
-    # x = IntVar()
+    x = None
 
     # variables that will be used to display the state of the game
     display_frame = None
@@ -75,10 +75,12 @@ class TicTacToe:
                                         bg="white", height=1, padx=27, pady=8)
         self.radio_button_label.grid(row=0, column=0)
 
+        self.x = IntVar()
+
         # creates radio buttons to select "X" or "O"
         for i in range(len(self.button_options)):
             Radiobutton(self.radio_button_frame, text=self.button_options[i], value=i, font=("Ariel", 16), width=10,
-                        height=1,  # variable=self.x, command=function
+                        height=1, command=self.select_shape,  variable=self.x,
                         ).grid(row=i+1, column=0)
 
         # creates frame to hold labels that display the current state
@@ -133,17 +135,6 @@ class TicTacToe:
         canvas.pack()
         return canvas
 
-    # method that draws an "X" or an "O" onto a canvas
-    def draw_shape(self, c, shape):
-
-        # draws an "X" in the canvas
-        if shape == "x":
-            c.create_line(34, 34, 136, 136, fill="black", width=10)
-            c.create_line(34, 136, 136, 34, fill="black", width=10)
-        # draws an "O" in the canvas
-        if shape == "o":
-            c.create_oval(34, 34, 136, 136, fill="white", width=10)
-
     # method that runs whenever the gameplay area is clicked by the user
     def turn(self, r, c):
 
@@ -191,13 +182,24 @@ class TicTacToe:
 
         # randomly selects an empty area for computer to draw a shape
         temp = random.choice(possible_moves)
-        self.draw_shape(c=self.canvases[temp[0]][temp[1]], shape=self.computerShape)
-        self.game_state[temp[0]][temp[1]] = self.computerShape
+        self.draw_shape(c=self.canvases[temp[0]][temp[1]], shape=self.computer_shape)
+        self.game_state[temp[0]][temp[1]] = self.computer_shape
         self.count += 1
         self.is_user_turn = True
 
         # checks to see if game is over (someone has won or a tie)
         self.check_winner()
+
+    # method that draws an "X" or an "O" onto a canvas
+    def draw_shape(self, c, shape):
+
+        # draws an "X" in the canvas
+        if shape == "x":
+            c.create_line(34, 34, 136, 136, fill="black", width=10)
+            c.create_line(34, 136, 136, 34, fill="black", width=10)
+        # draws an "O" in the canvas
+        if shape == "o":
+            c.create_oval(34, 34, 136, 136, fill="white", width=10)
 
     # method checks if a given shape (X or O) has won the game yet
     def check_winner(self):
@@ -240,6 +242,15 @@ class TicTacToe:
             self.display_status["text"] = self.display_text
             self.display_status["padx"] = 87
             self.game_over = True
+
+    def select_shape(self):
+        if self.x.get() == 0:
+            self.user_shape = "x"
+            self.computer_shape = "o"
+        elif self.x.get() == 1:
+            self.user_shape = "o"
+            self.computer_shape = "x"
+        self.restart()
 
     # method that restarts the game
     def restart(self):
