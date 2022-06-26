@@ -215,6 +215,7 @@ class TicTacToe:
             # if "O" has won, displays "O" as winner and ends game
             self.display_text = "O is Winner!"
             self.display_status["text"] = self.display_text
+            self.display_status["padx"] = 80
             self.game_over = True
 
         # checks if "X" has won the game
@@ -230,30 +231,41 @@ class TicTacToe:
             # if "X" has won, displays "X" as winner and ends game
             self.display_text = "X is Winner!"
             self.display_status["text"] = self.display_text
+            self.display_status["padx"] = 82
             self.game_over = True
 
         # checks if there is a tie
         elif self.count == 9:
-            self.display_text = "Tie!"
+            self.display_text = "Tie Game! "
             self.display_status["text"] = self.display_text
+            self.display_status["padx"] = 87
             self.game_over = True
 
     # method that restarts the game
     def restart(self):
 
-        # self.gameOver = False
-        # self.count = 0
-        #
-        # for list in self.canvases:
-        #     for canv in list:
-        #         canv.delete("all")
+        # resets variables that keep track of game state
+        self.game_over = False
+        self.is_user_turn = False
+        self.count = 0
+        self.game_state = [["", "", ""],
+                           ["", "", ""],
+                           ["", "", ""]]
 
-        pass
+        # clears all canvases
+        for lc in self.canvases:
+            for c in lc:
+                c.delete("all")
+
+        # resets display of game state
+        self.display_text = "Game in Progress "
+        self.display_status["text"] = self.display_text
+        self.display_status["padx"] = 45
 
     # method that quits the current game and closes the widow
     def quit(self):
 
-        pass
+        self.window.destroy()
 
     # method that displays the game to be played
     def play(self):
