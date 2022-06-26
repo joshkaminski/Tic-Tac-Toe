@@ -9,13 +9,14 @@ class TicTacToe:
     window = None
 
     # variables that hold the state of the game
-    gameOver = False
+    game_over = False
+    is_user_turn = True
     count = 0
 
     # 2D list that keeps track of x or o at each box
-    gameState = [["", "", ""],
-                 ["", "", ""],
-                 ["", "", ""]]
+    game_state = [["", "", ""],
+                  ["", "", ""],
+                  ["", "", ""]]
 
     # 2D list that holds the frames that make up the gameplay area
     frames = [[None, None, None],
@@ -77,7 +78,7 @@ class TicTacToe:
         # creates radio buttons to select "X" or "O"
         for i in range(len(self.button_options)):
             Radiobutton(self.radio_button_frame, text=self.button_options[i], value=i, font=("Ariel", 16), width=10,
-                        height=1, # variable=self.x, command=function
+                        height=1,  # variable=self.x, command=function
                         ).grid(row=i+1, column=0)
 
         # creates frame to hold labels that display the current state
@@ -132,7 +133,7 @@ class TicTacToe:
         canvas.pack()
         return canvas
 
-    # method that draws an x or an o onto a canvas
+    # method that draws an "X" or an "O" onto a canvas
     def draw_shape(self, c, shape):
 
         # draws an "X" in the canvas
@@ -146,77 +147,96 @@ class TicTacToe:
     # method that runs whenever the gameplay area is clicked by the user
     def turn(self, r, c):
 
-        # runs the user turn function
+        # runs the user turn method
         self.user_turn(r, c)
 
-        if not self.gameOver and self.count < 9:
+        # if the user has made a move successfully, computer turn runs
+        if not self.is_user_turn:
             self.computer_turn()
 
-        if self.count == 9:
-            self.display_text = "Tie!"
-            self.display_label["text"] = self.display_text
-
-        print(self.count)
-
+    # method that allows user to select a square to play
     def user_turn(self, r, c):
 
-        if self.gameState[r][c] == "" and self.count < 9 and self.gameOver == False:
+        # if game has ended, exit method and no more turns can be made
+        if self.game_over:
+            return
 
+        # if place where user clicked is empty: draws shape, increases counter, and sets it to computer's turn
+        if self.game_state[r][c] == "":
             self.draw_shape(c=self.canvases[r][c], shape=self.user_shape)
-            self.gameState[r][c] = self.user_shape
+            self.game_state[r][c] = self.user_shape
             self.count += 1
+            self.is_user_turn = False
 
+        # if place where user clicked isn't empty, quits function and waits for user to click again
         else:
             return
 
-        if self.check_winner("x"):
-            self.display_text = "X is Winner!"
-            self.display_status["text"] = self.display_text
+        # checks to see if game is over (someone has won or a tie)
+        self.check_winner()
 
-        elif self.check_winner("o"):
-            self.display_text = "O is Winner!"
-            self.display_status["text"] = self.display_text
-
+    # method that allows computer to select a square to play
     def computer_turn(self):
 
-        possible_moves = []
+        # if game has ended, exit method and no more turns can be made
+        if self.game_over:
+            return
 
+        # creates a list with all empty areas of the game
+        possible_moves = []
         for r in range(3):
             for c in range(3):
-                if self.gameState[r][c] == "":
+                if self.game_state[r][c] == "":
                     possible_moves.append([r, c])
 
+        # randomly selects an empty area for computer to draw a shape
         temp = random.choice(possible_moves)
         self.draw_shape(c=self.canvases[temp[0]][temp[1]], shape=self.computerShape)
-        self.gameState[temp[0]][temp[1]] = self.computerShape
+        self.game_state[temp[0]][temp[1]] = self.computerShape
         self.count += 1
+        self.is_user_turn = True
 
-        if self.check_winner("x"):
-            self.display_text = "X is Winner!"
-            self.display_status["text"] = self.display_text
-
-        elif self.check_winner("o"):
-            self.display_text = "O is Winner!"
-            self.display_status["text"] = self.display_text
+        # checks to see if game is over (someone has won or a tie)
+        self.check_winner()
 
     # method checks if a given shape (X or O) has won the game yet
-    def check_winner(self, shape):
+    def check_winner(self):
 
-        # checks possible winning combinations
-        if (self.gameState[0][0] == self.gameState[0][1] == self.gameState[0][2] == shape or
-            self.gameState[1][0] == self.gameState[1][1] == self.gameState[1][2] == shape or
-            self.gameState[2][0] == self.gameState[2][1] == self.gameState[2][2] == shape or
-            self.gameState[0][0] == self.gameState[1][0] == self.gameState[2][0] == shape or
-            self.gameState[0][1] == self.gameState[1][1] == self.gameState[2][1] == shape or
-            self.gameState[0][2] == self.gameState[1][2] == self.gameState[2][2] == shape or
-            self.gameState[0][0] == self.gameState[1][1] == self.gameState[2][2] == shape or
-           self.gameState[0][2] == self.gameState[1][1] == self.gameState[2][0] == shape):
+        # checks if "O" has won the game
+        if (self.game_state[0][0] == self.game_state[0][1] == self.game_state[0][2] == "o" or
+            self.game_state[1][0] == self.game_state[1][1] == self.game_state[1][2] == "o" or
+            self.game_state[2][0] == self.game_state[2][1] == self.game_state[2][2] == "o" or
+            self.game_state[0][0] == self.game_state[1][0] == self.game_state[2][0] == "o" or
+            self.game_state[0][1] == self.game_state[1][1] == self.game_state[2][1] == "o" or
+            self.game_state[0][2] == self.game_state[1][2] == self.game_state[2][2] == "o" or
+            self.game_state[0][0] == self.game_state[1][1] == self.game_state[2][2] == "o" or
+           self.game_state[0][2] == self.game_state[1][1] == self.game_state[2][0] == "o"):
 
-            # if there is a winner, sets gameOver variable to True
-            self.gameOver = True
+            # if "O" has won, displays "O" as winner and ends game
+            self.display_text = "O is Winner!"
+            self.display_status["text"] = self.display_text
+            self.game_over = True
 
-        # returns True if there is a winner, and returns False if not
-        return self.gameOver
+        # checks if "X" has won the game
+        elif (self.game_state[0][0] == self.game_state[0][1] == self.game_state[0][2] == "x" or
+              self.game_state[1][0] == self.game_state[1][1] == self.game_state[1][2] == "x" or
+              self.game_state[2][0] == self.game_state[2][1] == self.game_state[2][2] == "x" or
+              self.game_state[0][0] == self.game_state[1][0] == self.game_state[2][0] == "x" or
+              self.game_state[0][1] == self.game_state[1][1] == self.game_state[2][1] == "x" or
+              self.game_state[0][2] == self.game_state[1][2] == self.game_state[2][2] == "x" or
+              self.game_state[0][0] == self.game_state[1][1] == self.game_state[2][2] == "x" or
+              self.game_state[0][2] == self.game_state[1][1] == self.game_state[2][0] == "x"):
+
+            # if "X" has won, displays "X" as winner and ends game
+            self.display_text = "X is Winner!"
+            self.display_status["text"] = self.display_text
+            self.game_over = True
+
+        # checks if there is a tie
+        elif self.count == 9:
+            self.display_text = "Tie!"
+            self.display_status["text"] = self.display_text
+            self.game_over = True
 
     # method that restarts the game
     def restart(self):
