@@ -11,9 +11,10 @@ class TicTacToe:
     # variables that hold the state of the game
     game_over = False
     is_user_turn = True
+    tie = False
     count = 0
 
-    # 2D list that keeps track of x or o at each box
+    # 2D list that keeps track of "X" or "O" at each box
     game_state = [["", "", ""],
                   ["", "", ""],
                   ["", "", ""]]
@@ -28,9 +29,14 @@ class TicTacToe:
                 [None, None, None],
                 [None, None, None]]
 
+    # lists that keep track of winning squares
+    w1 = []
+    w2 = []
+    w3 = []
+
     # variables that hold the shape that the user and computer have
-    user_shape = "x"
-    computer_shape = "o"
+    user_shape = "X"
+    computer_shape = "O"
 
     # variables that hold the frame that will display gameplay options, gameplay state, and current score
     game_state_frame = None
@@ -39,7 +45,7 @@ class TicTacToe:
     radio_button_frame = None
     radio_button_label = None
     button_options = ["X", "O"]
-    x = None
+    radio_var = None
 
     # variables that will be used to display the state of the game
     display_frame = None
@@ -75,12 +81,12 @@ class TicTacToe:
                                         bg="white", height=1, padx=27, pady=8)
         self.radio_button_label.grid(row=0, column=0)
 
-        self.x = IntVar()
+        self.radio_var = IntVar()
 
         # creates radio buttons to select "X" or "O"
         for i in range(len(self.button_options)):
             Radiobutton(self.radio_button_frame, text=self.button_options[i], value=i, font=("Ariel", 16), width=10,
-                        height=1, command=self.select_shape,  variable=self.x,
+                        height=1, command=self.select_shape, variable=self.radio_var,
                         ).grid(row=i+1, column=0)
 
         # creates frame to hold labels that display the current state
@@ -116,7 +122,7 @@ class TicTacToe:
             for j in range(3):
                 self.frames[i-1][j] = self.create_frame(r=i, c=j)
                 self.canvases[i-1][j] = self.create_canvas(self.frames[i - 1][j])
-                # binds the "turn" function to run whenever the gameplay area is clicked
+                # binds the "turn" method to run whenever the gameplay area is clicked
                 self.canvases[i-1][j].bind("<Button-1>", lambda e, row=i-1, col=j: self.turn(row, col))
 
     # method that creates frame and adds it to the gameplay area
@@ -159,12 +165,22 @@ class TicTacToe:
             self.count += 1
             self.is_user_turn = False
 
-        # if place where user clicked isn't empty, quits function and waits for user to click again
+        # if place where user clicked isn't empty, quits method and waits for user to click again
         else:
             return
 
         # checks to see if game is over (someone has won or a tie)
-        self.check_winner()
+        self.check("X")
+        if not self.game_over:
+            self.check("O")
+
+        # checks if there is a tie
+        if self.count == 9 and not self.game_over:
+            self.display_text = "Tie Game! "
+            self.display_status["text"] = self.display_text
+            self.display_status["padx"] = 87
+            self.game_over = True
+            self.tie = True
 
     # method that allows computer to select a square to play
     def computer_turn(self):
@@ -188,80 +204,91 @@ class TicTacToe:
         self.is_user_turn = True
 
         # checks to see if game is over (someone has won or a tie)
-        self.check_winner()
+        self.check("X")
+        if not self.game_over:
+            self.check("O")
+
+        # checks if there is a tie
+        if self.count == 9 and not self.game_over:
+            self.display_text = "Tie Game! "
+            self.display_status["text"] = self.display_text
+            self.display_status["padx"] = 87
+            self.game_over = True
+            self.tie = True
 
     # method that draws an "X" or an "O" onto a canvas
     def draw_shape(self, c, shape):
 
         # draws an "X" in the canvas
-        if shape == "x":
+        if shape == "X":
             c.create_line(34, 34, 136, 136, fill="black", width=10)
             c.create_line(34, 136, 136, 34, fill="black", width=10)
         # draws an "O" in the canvas
-        if shape == "o":
+        if shape == "O":
             c.create_oval(34, 34, 136, 136, fill="white", width=10)
 
     # method checks if a given shape (X or O) has won the game yet
-    def check_winner(self):
+    def check(self, shape):
 
-        # checks if "O" has won the game
-        if (self.game_state[0][0] == self.game_state[0][1] == self.game_state[0][2] == "o" or
-            self.game_state[1][0] == self.game_state[1][1] == self.game_state[1][2] == "o" or
-            self.game_state[2][0] == self.game_state[2][1] == self.game_state[2][2] == "o" or
-            self.game_state[0][0] == self.game_state[1][0] == self.game_state[2][0] == "o" or
-            self.game_state[0][1] == self.game_state[1][1] == self.game_state[2][1] == "o" or
-            self.game_state[0][2] == self.game_state[1][2] == self.game_state[2][2] == "o" or
-            self.game_state[0][0] == self.game_state[1][1] == self.game_state[2][2] == "o" or
-           self.game_state[0][2] == self.game_state[1][1] == self.game_state[2][0] == "o"):
+        # checks if a shape has won the game horizontally
+        for i in range(3):
+            if self.game_state[i][0] == self.game_state[i][1] == self.game_state[i][2] == shape:
+                self.w1 = [i, 0]
+                self.w2 = [i, 1]
+                self.w3 = [i, 2]
+                self.game_over = True
 
-            # if "O" has won, displays "O" as winner and ends game
-            self.display_text = "O is Winner!"
-            self.display_status["text"] = self.display_text
-            self.display_status["padx"] = 80
+        # checks if a shape has won the game vertically
+        for i in range(3):
+            if self.game_state[0][i] == self.game_state[1][i] == self.game_state[2][i] == shape:
+                self.w1 = [0, i]
+                self.w2 = [1, i]
+                self.w3 = [2, i]
+                self.game_over = True
+
+        # checks if a shape has won the game diagonally
+        if self.game_state[0][0] == self.game_state[1][1] == self.game_state[2][2] == shape:
+            self.w1 = [0, 0]
+            self.w2 = [1, 1]
+            self.w3 = [2, 2]
             self.game_over = True
 
-        # checks if "X" has won the game
-        elif (self.game_state[0][0] == self.game_state[0][1] == self.game_state[0][2] == "x" or
-              self.game_state[1][0] == self.game_state[1][1] == self.game_state[1][2] == "x" or
-              self.game_state[2][0] == self.game_state[2][1] == self.game_state[2][2] == "x" or
-              self.game_state[0][0] == self.game_state[1][0] == self.game_state[2][0] == "x" or
-              self.game_state[0][1] == self.game_state[1][1] == self.game_state[2][1] == "x" or
-              self.game_state[0][2] == self.game_state[1][2] == self.game_state[2][2] == "x" or
-              self.game_state[0][0] == self.game_state[1][1] == self.game_state[2][2] == "x" or
-              self.game_state[0][2] == self.game_state[1][1] == self.game_state[2][0] == "x"):
-
-            # if "X" has won, displays "X" as winner and ends game
-            self.display_text = "X is Winner!"
-            self.display_status["text"] = self.display_text
-            self.display_status["padx"] = 82
+        # checks if a shape has won the game diagonally
+        elif self.game_state[0][2] == self.game_state[1][1] == self.game_state[2][0] == shape:
+            self.w1 = [0, 2]
+            self.w2 = [1, 1]
+            self.w3 = [2, 0]
             self.game_over = True
 
-        # checks if there is a tie
-        elif self.count == 9:
-            self.display_text = "Tie Game! "
+        # runs if a given shape won
+        if self.game_over:
+            # displays the winner
+            self.display_text = str(shape) + " is Winner!"
             self.display_status["text"] = self.display_text
-            self.display_status["padx"] = 87
-            self.game_over = True
+            if shape == "X":
+                self.display_status["padx"] = 82
+            else:
+                self.display_status["padx"] = 80
 
+            # paints the winning squares a light green
+            self.canvases[self.w1[0]][self.w1[1]]["bg"] = "light green"
+            self.canvases[self.w2[0]][self.w2[1]]["bg"] = "light green"
+            self.canvases[self.w3[0]][self.w3[1]]["bg"] = "light green"
+
+    # method that allows user to select which shape they play as
     def select_shape(self):
-        if self.x.get() == 0:
-            self.user_shape = "x"
-            self.computer_shape = "o"
-        elif self.x.get() == 1:
-            self.user_shape = "o"
-            self.computer_shape = "x"
+
+        if self.radio_var.get() == 0:
+            self.user_shape = "X"
+            self.computer_shape = "O"
+        elif self.radio_var.get() == 1:
+            self.user_shape = "O"
+            self.computer_shape = "X"
+
         self.restart()
 
     # method that restarts the game
     def restart(self):
-
-        # resets variables that keep track of game state
-        self.game_over = False
-        self.is_user_turn = False
-        self.count = 0
-        self.game_state = [["", "", ""],
-                           ["", "", ""],
-                           ["", "", ""]]
 
         # clears all canvases
         for lc in self.canvases:
@@ -272,6 +299,25 @@ class TicTacToe:
         self.display_text = "Game in Progress "
         self.display_status["text"] = self.display_text
         self.display_status["padx"] = 45
+
+        # resets the colors of winning squares
+        if self.game_over and not self.tie:
+            self.canvases[self.w1[0]][self.w1[1]]["bg"] = "white"
+            self.canvases[self.w2[0]][self.w2[1]]["bg"] = "white"
+            self.canvases[self.w3[0]][self.w3[1]]["bg"] = "white"
+
+            self.w1 = []
+            self.w2 = []
+            self.w3 = []
+
+        # resets variables that keep track of game state
+        self.game_over = False
+        self.is_user_turn = False
+        self.tie = False
+        self.count = 0
+        self.game_state = [["", "", ""],
+                               ["", "", ""],
+                               ["", "", ""]]
 
     # method that quits the current game and closes the widow
     def quit(self):
