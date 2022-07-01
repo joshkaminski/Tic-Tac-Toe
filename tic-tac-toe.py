@@ -379,8 +379,10 @@ class TicTacToe:
             self.display_status["text"] = self.display_text
             if shape == "X":
                 self.display_status["padx"] = 82
+                self.display_status["fg"] = "navy blue"
             else:
                 self.display_status["padx"] = 80
+                self.display_status["fg"] = "maroon"
 
             # paints the winning squares a light green
             self.canvases[self.w1[0]][self.w1[1]]["bg"] = "light green"
@@ -411,6 +413,7 @@ class TicTacToe:
         self.display_text = "Game in Progress "
         self.display_status["text"] = self.display_text
         self.display_status["padx"] = 45
+        self.display_status["fg"] = "black"
 
         # resets the colors of winning squares and the winning squares
         if self.game_over and not self.tie:
