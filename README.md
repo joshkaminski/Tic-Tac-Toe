@@ -1,5 +1,5 @@
 # Tic-Tac-Toe
-GUI Tic-Tac-Toe game using Python and tkinter with two game modes: Impossible (AI) and Easy (randomization).
+GUI Tic-Tac-Toe game using Python and tkinter with two game modes: **Impossible (AI)** and **Easy (randomization)**.
 Player moves first in this game and is "X", while computer moves second and is "O."
 
 **Impossible mode:**
