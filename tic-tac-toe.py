@@ -1,6 +1,5 @@
 from tkinter import *
 from tkmacosx import *
-import time
 import random
 
 
@@ -13,6 +12,7 @@ class TicTacToe:
     is_user_turn = True
     tie = False
     count = 0
+    impossible_mode = False
 
     # 2D list that keeps track of "X" or "O" at each box
     game_state = [["", "", ""],
@@ -44,7 +44,7 @@ class TicTacToe:
     # variables that will be used for radio buttons
     radio_button_frame = None
     radio_button_label = None
-    button_options = ["X", "O"]
+    button_options = ["Easy", "Impossible"]
     radio_var = None
 
     # variables that will be used to display the state of the game
@@ -77,19 +77,20 @@ class TicTacToe:
         self.radio_button_frame.grid(row=0, column=0)
 
         # creates label that tells player to select which shape to play as
-        self.radio_button_label = Label(self.radio_button_frame, text="Player:", font=("Arial", 16), fg="black",
-                                        bg="white", height=1, padx=27, pady=8)
+        self.radio_button_label = Label(self.radio_button_frame, text="Mode:", font=("Arial", 17), fg="black",
+                                        bg="white", height=1, padx=28, pady=7)
         self.radio_button_label.grid(row=0, column=0)
 
+        # creates variable that allows radio button to function
         self.radio_var = IntVar()
 
         # creates radio buttons to select "X" or "O"
         for i in range(len(self.button_options)):
-            Radiobutton(self.radio_button_frame, text=self.button_options[i], value=i, font=("Ariel", 16), width=10,
-                        height=1, command=self.select_shape, variable=self.radio_var,
+            Radiobutton(self.radio_button_frame, text=self.button_options[i], value=i, font=("Ariel", 15), width=10,
+                        height=1, command=self.select_mode, variable=self.radio_var,
                         ).grid(row=i+1, column=0)
 
-        # creates frame to hold labels that display the current state
+        # creates frame to hold labels that display the current game state
         self.display_frame = Frame(self.game_state_frame, bg="black", highlightbackground="black", highlightthickness=4)
         self.display_frame.grid(row=0, column=1)
 
@@ -122,7 +123,7 @@ class TicTacToe:
             for j in range(3):
                 self.frames[i-1][j] = self.create_frame(r=i, c=j)
                 self.canvases[i-1][j] = self.create_canvas(self.frames[i - 1][j])
-                # binds the "turn" method to run whenever the gameplay area is clicked
+                # binds the "turn" method to run whenever a square is selected
                 self.canvases[i-1][j].bind("<Button-1>", lambda e, row=i-1, col=j: self.turn(row, col))
 
     # method that creates frame and adds it to the gameplay area
@@ -141,7 +142,7 @@ class TicTacToe:
         canvas.pack()
         return canvas
 
-    # method that runs whenever the gameplay area is clicked by the user
+    # method that runs whenever a square is selected by the user
     def turn(self, r, c):
 
         # runs the user turn method
@@ -149,7 +150,11 @@ class TicTacToe:
 
         # if the user has made a move successfully, computer turn runs
         if not self.is_user_turn:
-            self.computer_turn()
+            # runs impossible mode or random mode depending on the game mode selected by the user
+            if self.impossible_mode:
+                self.impossible_turn()
+            else:
+                self.random_turn()
 
     # method that allows user to select a square to play
     def user_turn(self, r, c):
@@ -158,32 +163,22 @@ class TicTacToe:
         if self.game_over:
             return
 
-        # if place where user clicked is empty: draws shape, increases counter, and sets it to computer's turn
+        # if square that user selected is empty: draws shape, increases counter, and sets it to computer's turn
         if self.game_state[r][c] == "":
             self.draw_shape(c=self.canvases[r][c], shape=self.user_shape)
             self.game_state[r][c] = self.user_shape
             self.count += 1
             self.is_user_turn = False
 
-        # if place where user clicked isn't empty, quits method and waits for user to click again
+        # if square that user selected is full, quits method and waits for user to select another square
         else:
             return
 
-        # checks to see if game is over (someone has won or a tie)
-        self.check("X")
-        if not self.game_over:
-            self.check("O")
+        # calls method to check if game is over
+        self.check()
 
-        # checks if there is a tie
-        if self.count == 9 and not self.game_over:
-            self.display_text = "Tie Game! "
-            self.display_status["text"] = self.display_text
-            self.display_status["padx"] = 87
-            self.game_over = True
-            self.tie = True
-
-    # method that allows computer to select a square to play
-    def computer_turn(self):
+    # method that allows computer to randomly select a square to play
+    def random_turn(self):
 
         # if game has ended, exit method and no more turns can be made
         if self.game_over:
@@ -196,17 +191,145 @@ class TicTacToe:
                 if self.game_state[r][c] == "":
                     possible_moves.append([r, c])
 
-        # randomly selects an empty area for computer to draw a shape
+        # randomly selects an empty square for computer to draw a shape
         temp = random.choice(possible_moves)
         self.draw_shape(c=self.canvases[temp[0]][temp[1]], shape=self.computer_shape)
         self.game_state[temp[0]][temp[1]] = self.computer_shape
         self.count += 1
         self.is_user_turn = True
 
+        # calls method to check if game is over
+        self.check()
+
+    # method that uses minimax method for computer to select best move
+    def impossible_turn(self):
+
+        # if game has ended, exit method and no more turns can be made
+        if self.game_over:
+            return
+
+        # declares variables used to hold the best move for the computer
+        best_move_score = -10000000000
+        best_move = []
+
+        # finds all possible moves the computer can make and stores them in a list
+        possible_moves = []
+        for r in range(3):
+            for c in range(3):
+                if self.game_state[r][c] == "":
+                    possible_moves.append([r, c])
+
+        # runs for each possible move
+        for i in range(len(possible_moves)):
+            # finds the score for that possible move
+            self.game_state[possible_moves[i][0]][possible_moves[i][1]] = self.computer_shape
+            move = self.minimax(self.game_state, 0, False)
+            self.game_state[possible_moves[i][0]][possible_moves[i][1]] = ""
+
+            # checks if that move is the best possible move and updates variables accordingly
+            if move > best_move_score:
+                best_move = [possible_moves[i][0], possible_moves[i][1]]
+                best_move_score = move
+
+        # draws shape and updates the game state
+        self.draw_shape(c=self.canvases[best_move[0]][best_move[1]], shape=self.computer_shape)
+        self.game_state[best_move[0]][best_move[1]] = self.computer_shape
+        self.count += 1
+        self.is_user_turn = True
+
+        # calls method to check if game is over
+        self.check()
+
+    # method uses minimax algorithm to calculate the score for making a move at a given square
+    def minimax(self, game_board, depth, comp_turn):
+
+        # checks if game is over and returns score if it is
+        if self.winner(self.computer_shape):
+            return 10 - depth
+        if self.winner(self.user_shape):
+            return -10 + depth
+
+        # finds all possible moves that can be made and stores them in a list
+        possible_moves = []
+        for r in range(3):
+            for c in range(3):
+                if self.game_state[r][c] == "":
+                    possible_moves.append([r, c])
+
+        # checks if game is a tie and returns 0 if it is
+        if len(possible_moves) == 0:
+            return 0
+
+        # runs if it is the computer's turn
+        if comp_turn:
+            top_score = -10000000000
+            # finds which move would result in the highest score by iterating through all possible moves
+            for i in range(len(possible_moves)):
+                # temporarily sets game board
+                game_board[possible_moves[i][0]][possible_moves[i][1]] = self.computer_shape
+                # recursively calls minimax for user's next turn
+                score = self.minimax(game_board, depth + 1, False)
+                # fixes game board
+                game_board[possible_moves[i][0]][possible_moves[i][1]] = ""
+                top_score = max(score, top_score)
+
+            # returns the highest possible score from making that move
+            return top_score
+
+        # runs if it is the computer's turn
+        else:
+            top_score = 10000000000
+            # finds which move would result in the lowest score by iterating through all possible moves
+            for j in range(len(possible_moves)):
+                # temporarily sets game board
+                game_board[possible_moves[j][0]][possible_moves[j][1]] = self.user_shape
+                # recursively calls minimax for computer's next turn
+                score = self.minimax(game_board, depth + 1, True)
+                # fixes game board
+                game_board[possible_moves[j][0]][possible_moves[j][1]] = ""
+                top_score = min(score, top_score)
+
+            # returns the lowest possible score from making that move
+            return top_score
+
+    # method checks if game has been won by a player
+    def winner(self, shape):
+
+        # checks possible winning combinations
+        if (self.game_state[0][0] == self.game_state[0][1] == self.game_state[0][2] == shape or
+                self.game_state[1][0] == self.game_state[1][1] == self.game_state[1][2] == shape or
+                self.game_state[2][0] == self.game_state[2][1] == self.game_state[2][2] == shape or
+                self.game_state[0][0] == self.game_state[1][0] == self.game_state[2][0] == shape or
+                self.game_state[0][1] == self.game_state[1][1] == self.game_state[2][1] == shape or
+                self.game_state[0][2] == self.game_state[1][2] == self.game_state[2][2] == shape or
+                self.game_state[0][0] == self.game_state[1][1] == self.game_state[2][2] == shape or
+                self.game_state[0][2] == self.game_state[1][1] == self.game_state[2][0] == shape):
+
+            # returns true if game is won
+            return True
+
+        # returns false if game is not  won
+        else:
+            return False
+
+    # method that draws an "X" or an "O" onto a canvas
+    def draw_shape(self, c, shape):
+
+        # draws an "X" in the canvas
+        if shape == "X":
+            c.create_line(34, 34, 136, 136, fill="navy blue", width=10)
+            c.create_line(34, 136, 136, 34, fill="navy blue", width=10)
+        # draws an "O" in the canvas
+        if shape == "O":
+            c.create_oval(34, 34, 136, 136, outline="maroon", width=10)
+
+    # checks if the game is over
+    def check(self):
+
         # checks to see if game is over (someone has won or a tie)
-        self.check("X")
+        self.check_winner("X")
         if not self.game_over:
-            self.check("O")
+            self.check_winner("O")
 
         # checks if there is a tie
         if self.count == 9 and not self.game_over:
@@ -216,19 +339,8 @@ class TicTacToe:
             self.game_over = True
             self.tie = True
 
-    # method that draws an "X" or an "O" onto a canvas
-    def draw_shape(self, c, shape):
-
-        # draws an "X" in the canvas
-        if shape == "X":
-            c.create_line(34, 34, 136, 136, fill="black", width=10)
-            c.create_line(34, 136, 136, 34, fill="black", width=10)
-        # draws an "O" in the canvas
-        if shape == "O":
-            c.create_oval(34, 34, 136, 136, fill="white", width=10)
-
     # method checks if a given shape (X or O) has won the game yet
-    def check(self, shape):
+    def check_winner(self, shape):
 
         # checks if a shape has won the game horizontally
         for i in range(3):
@@ -275,16 +387,16 @@ class TicTacToe:
             self.canvases[self.w2[0]][self.w2[1]]["bg"] = "light green"
             self.canvases[self.w3[0]][self.w3[1]]["bg"] = "light green"
 
-    # method that allows user to select which shape they play as
-    def select_shape(self):
+    # method that allows user to select to play the easy or impossible game mode
+    def select_mode(self):
 
+        # sets game mode depending on which radio button the user selects
         if self.radio_var.get() == 0:
-            self.user_shape = "X"
-            self.computer_shape = "O"
+            self.impossible_mode = False
         elif self.radio_var.get() == 1:
-            self.user_shape = "O"
-            self.computer_shape = "X"
+            self.impossible_mode = True
 
+        # restarts the game
         self.restart()
 
     # method that restarts the game
@@ -300,7 +412,7 @@ class TicTacToe:
         self.display_status["text"] = self.display_text
         self.display_status["padx"] = 45
 
-        # resets the colors of winning squares
+        # resets the colors of winning squares and the winning squares
         if self.game_over and not self.tie:
             self.canvases[self.w1[0]][self.w1[1]]["bg"] = "white"
             self.canvases[self.w2[0]][self.w2[1]]["bg"] = "white"
@@ -316,8 +428,8 @@ class TicTacToe:
         self.tie = False
         self.count = 0
         self.game_state = [["", "", ""],
-                               ["", "", ""],
-                               ["", "", ""]]
+                           ["", "", ""],
+                           ["", "", ""]]
 
     # method that quits the current game and closes the widow
     def quit(self):
